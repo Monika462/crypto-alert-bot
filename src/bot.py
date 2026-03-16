@@ -13,23 +13,3 @@ def main():
     print(f"Bitcoin price: ${price:,}")
 
 main()
-```
-
-**Save — Cmd+S. Close TextEdit.**
-
-Install requests, then run it:
-```
-pip install requests
-python3 src/bot.py
-```
-
-You should see something like:
-```
-Bitcoin price: $83,241
-```
-
-Now commit:
-```
-git add src/bot.py
-git commit -m "feat: fetch BTC price from API"
-git push origin main
