@@ -2,6 +2,8 @@ import requests
 import csv
 import os
 import logging
+import schedule
+import time
 from datetime import datetime
 
 NTFY_TOPIC = "monika-crypto-alert"
@@ -48,7 +50,7 @@ def check_change(old, new, coin):
     direction = "UP" if change > 0 else "DOWN"
     logging.info(f"{coin} change: {change:+.2f}%")
     print(f"{coin} change: {change:+.2f}%")
-    if abs(change) >= 0.1:
+    if abs(change) >= 3:
         send_alert(
             f"{coin} moved {direction} {abs(change):.2f}%",
             f"Current price: ${new:,}"
@@ -64,9 +66,10 @@ def save_to_csv(btc, eth):
         writer.writerow([datetime.now(), btc, eth])
     logging.info(f"Saved to CSV — BTC: ${btc:,} ETH: ${eth:,}")
 
-def main():
+def run():
     try:
         logging.info("Bot started")
+        print(f"\n--- Check at {datetime.now().strftime('%H:%M:%S')} ---")
         old_btc, old_eth = read_last_row()
         btc, eth = get_prices()
         print(f"Bitcoin:  ${btc:,}")
@@ -77,13 +80,15 @@ def main():
         print("Saved to prices.csv")
         logging.info("Bot finished successfully")
     except requests.exceptions.ConnectionError:
-        logging.error("No internet connection — could not reach API")
+        logging.error("No internet connection")
         print("ERROR: No internet connection")
-    except requests.exceptions.Timeout:
-        logging.error("API request timed out")
-        print("ERROR: API timed out")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         print(f"ERROR: {e}")
 
-main()
+print("Crypto Alert Bot running. Checks every hour. Press Ctrl+C to stop.")
+run()
+schedule.every(1).hours.do(run)
+while True:
+    schedule.run_pending()
+    time.sleep(60)
