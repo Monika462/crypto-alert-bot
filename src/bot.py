@@ -1,9 +1,16 @@
 import requests
 import csv
 import os
+import logging
 from datetime import datetime
 
 NTFY_TOPIC = "monika-crypto-alert"
+
+logging.basicConfig(
+    filename="bot.log",
+    level=logging.INFO,
+    format="%(asctime)s — %(levelname)s — %(message)s"
+)
 
 def get_prices():
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -31,6 +38,7 @@ def send_alert(title, message):
         data=message.encode("utf-8"),
         headers={"Title": title, "Priority": "high", "Tags": "rotating_light"}
     )
+    logging.info(f"Alert sent: {title}")
     print("Alert sent to your phone!")
 
 def check_change(old, new, coin):
@@ -38,6 +46,7 @@ def check_change(old, new, coin):
         return
     change = ((new - old) / old) * 100
     direction = "UP" if change > 0 else "DOWN"
+    logging.info(f"{coin} change: {change:+.2f}%")
     print(f"{coin} change: {change:+.2f}%")
     if abs(change) >= 0.1:
         send_alert(
@@ -53,15 +62,28 @@ def save_to_csv(btc, eth):
         if not file_exists:
             writer.writerow(["timestamp", "bitcoin_usd", "ethereum_usd"])
         writer.writerow([datetime.now(), btc, eth])
+    logging.info(f"Saved to CSV — BTC: ${btc:,} ETH: ${eth:,}")
 
 def main():
-    old_btc, old_eth = read_last_row()
-    btc, eth = get_prices()
-    print(f"Bitcoin:  ${btc:,}")
-    print(f"Ethereum: ${eth:,}")
-    check_change(old_btc, btc, "Bitcoin")
-    check_change(old_eth, eth, "Ethereum")
-    save_to_csv(btc, eth)
-    print("Saved to prices.csv")
+    try:
+        logging.info("Bot started")
+        old_btc, old_eth = read_last_row()
+        btc, eth = get_prices()
+        print(f"Bitcoin:  ${btc:,}")
+        print(f"Ethereum: ${eth:,}")
+        check_change(old_btc, btc, "Bitcoin")
+        check_change(old_eth, eth, "Ethereum")
+        save_to_csv(btc, eth)
+        print("Saved to prices.csv")
+        logging.info("Bot finished successfully")
+    except requests.exceptions.ConnectionError:
+        logging.error("No internet connection — could not reach API")
+        print("ERROR: No internet connection")
+    except requests.exceptions.Timeout:
+        logging.error("API request timed out")
+        print("ERROR: API timed out")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        print(f"ERROR: {e}")
 
 main()
