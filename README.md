@@ -16,7 +16,7 @@ Runs automatically every hour — no manual work needed.
 
 ## Demo
 
-![Bot running in terminal](screenshots/bot-running.png)
+![Bot running in terminal](screenshots/bot-running_in-terminal-screenshot.png)
 
 ## Tech used
 
